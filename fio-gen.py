@@ -7,7 +7,7 @@ import os, sys
 import math
 import json
 import pprint
-sys.path.append('../libs/');
+sys.path.append('./libs/');
 from multihost import SvrMultiHostCustom
 
 sys.path.append('../provision/');
