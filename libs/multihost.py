@@ -7,7 +7,7 @@
 # The command line looks like the following:
 #   ./multihost.py -y <yaml_input_file> -o ./out -u root -p 'pass!Q@W#E'
 #
-# Here iss an example YAML config file for the script for using Alex tools.  Kind of a pain not
+# Here is an example YAML config file for the script for using Alex tools.  Kind of a pain not
 # knowing the output file name but it works.  It will create a remote folder /scratch/dave,
 # Run alex tools with output to /scratch/dave, then tar up specific file output to a known
 # file name, then delete the /scratch/dave folder.
@@ -15,10 +15,10 @@
 # NOTE: this will leave the .tgz file on the host, and hopefully replace it each time it is run.
 #
 # hosts:
-#     dedwood-03.micron.com:
+#     dedwood-03.sample.com:
 #        command: "mkdir /scratch/dave ; /scratch/blktbl-capture-vmware/dumpreg /scratch/dave ; tar -zcf regdump.tgz /scratch/dave/*_REG.txt ; rm -rf /scratch/dave"
 #        file: "regdump.tgz"
-#     dedwood-04.micron.com:
+#     dedwood-04.sample.com:
 #        command: "mkdir /scratch/dave ; /scratch/blktbl-capture-vmware/dumpreg /scratch/dave ; tar -zcf regdump.tgz /scratch/dave/*_REG.txt ; rm -rf /scratch/dave"
 #        file: "regdump.tgz"
 #
@@ -53,7 +53,6 @@ Utility for execution commands on mutliple hosts simultaneously via SSH and YAML
 """
 
 import sys
-sys.path.append('../libs/');
 from remote_exec import SvrRemoteControl, SvrRemoteThread
 
 import argparse
@@ -62,27 +61,34 @@ import string
 import os
 
 # Defaults can be overridden via the command line.
-CFG_DEF_TARGET_USER   = "root";
-CFG_DEF_TARGET_PWD    = "pass!Q@W#E";
+CFG_DEF_TARGET_USER = "root";
+CFG_DEF_TARGET_PWD = "pass!Q@W#E";
+
 
 def AddArgs(parser_obj):
-   parser_obj.add_argument('-y', '--yaml', dest='CfgYamlIn',   action='store', required=True, type=argparse.FileType('r'),  help='Input file containing YAML host + command config.');
-   parser_obj.add_argument('-o', '--out',  dest='CfgOut',      action='store', required=True,                               help='Folder to place output files.');
-   parser_obj.add_argument('-u', '--user', dest='CfgUserName', action='store', required=False, default=CFG_DEF_TARGET_USER, help='ESXi host (SSH) user name (root).');
-   parser_obj.add_argument('-p', '--pwd',  dest='CfgUserPwd',  action='store', required=False, default=CFG_DEF_TARGET_PWD,  help='ESXi (SSH) user password (root).');
+    parser_obj.add_argument('-y', '--yaml', dest='CfgYamlIn', action='store', required=True,
+                            type=argparse.FileType('r'), help='Input file containing YAML host + command config.');
+    parser_obj.add_argument('-o', '--out', dest='CfgOut', action='store', required=True,
+                            help='Folder to place output files.');
+    parser_obj.add_argument('-u', '--user', dest='CfgUserName', action='store', required=False,
+                            default=CFG_DEF_TARGET_USER, help='ESXi host (SSH) user name (root).');
+    parser_obj.add_argument('-p', '--pwd', dest='CfgUserPwd', action='store', required=False,
+                            default=CFG_DEF_TARGET_PWD, help='ESXi (SSH) user password (root).');
+
 
 def GetArgs():
-   """;
-   Supports the command-line arguments listed below.;
-   """;
+    """;
+    Supports the command-line arguments listed below.;
+    """;
 
-   # create the top-level parser
-   parser = argparse.ArgumentParser(description='Remote execution library - input arguments.');
-   AddArgs(parser);
+    # create the top-level parser
+    parser = argparse.ArgumentParser(description='Remote execution library - input arguments.');
+    AddArgs(parser);
 
-   # parse the args and call whatever function was selected
-   args = parser.parse_args();
-   return args;
+    # parse the args and call whatever function was selected
+    args = parser.parse_args();
+    return args;
+
 
 #############################################
 
@@ -109,104 +115,106 @@ def GetArgs():
 #       the file name will be prepended with the host name.
 #
 class SvrMultiHost:
-   def __init__(self, yaml_obj, user_name='root', user_pass='pass!Q@W#E'):
-      self.ThreadList  = list();
-      self.YamlObj     = yaml_obj;
-      self.DefaultUser = user_name;
-      self.DefaultPwd  = user_pass;
+    def __init__(self, yaml_obj, user_name='root', user_pass='pass!Q@W#E'):
+        self.ThreadList = list();
+        self.YamlObj = yaml_obj;
+        self.DefaultUser = user_name;
+        self.DefaultPwd = user_pass;
 
-   def __threxec_cb(self, rc):
-      host_name = rc.HostName;
-      cmd_str   = self.YamlObj['hosts'][host_name]['command']
-      print "Executing '%s' on host %s" % (cmd_str, host_name);
-      e_code, out_str = rc.rexec(cmd_str);
-      return [ e_code, out_str ];
+    def __threxec_cb(self, rc):
+        host_name = rc.HostName;
+        cmd_str = self.YamlObj['hosts'][host_name]['command']
+        print("Executing '%s' on host %s" % (cmd_str, host_name));
+        e_code, out_str = rc.rexec(cmd_str);
+        return [e_code, out_str];
 
-   def Start(self):
-      print "Starting multi-host threads...";
-      for host in self.YamlObj['hosts']:
-         user_name  = self.YamlObj['hosts'][host].get('username', self.DefaultUser);
-         user_pass  = self.YamlObj['hosts'][host].get('password', self.DefaultPwd);
-         th = SvrRemoteThread(host, user_name, user_pass, self.__threxec_cb)
-         if (th.RC.is_connected()):
-            self.ThreadList.append(th);
-            th.start();
+    def Start(self):
+        print("Starting multi-host threads...");
+        for host in self.YamlObj['hosts']:
+            user_name = self.YamlObj['hosts'][host].get('username', self.DefaultUser);
+            user_pass = self.YamlObj['hosts'][host].get('password', self.DefaultPwd);
+            th = SvrRemoteThread(host, user_name, user_pass, self.__threxec_cb)
+            if (th.RC.is_connected()):
+                self.ThreadList.append(th);
+                th.start();
 
-   def Wait(self):
-      print "\nWaiting for threads to exit...";
-      for th in self.ThreadList:
-         th.join();
-      print "Thread execution complete.";
+    def Wait(self):
+        print("\nWaiting for threads to exit...");
+        for th in self.ThreadList:
+            th.join();
+        print("Thread execution complete.");
 
-   # Copy files from the specified remote out_folder, and copy to the "cwd",
-   # once copy is complete, disconnect the remote host; command execution is complete.
-   def GetFiles(self, out_folder='.'):
-      print "Retrieving files from remote hosts...";
-      for th in self.ThreadList:
-         host_name = th.RC.HostName;
-         rem_file = self.YamlObj['hosts'][host_name]['file'];
-         loc_file = "%s/%s_%s" % (out_folder, host_name, rem_file);
-         print "  Retrieving %s from %s" % (rem_file, host_name)
-         th.RC.get_file(rem_file, loc_file)
-         # close the remote connection, no more commands allowed
-         th.disconnect();
-      print "File retrieval complete.";
+    # Copy files from the specified remote out_folder, and copy to the "cwd",
+    # once copy is complete, disconnect the remote host; command execution is complete.
+    def GetFiles(self, out_folder='.'):
+        print("Retrieving files from remote hosts...");
+        for th in self.ThreadList:
+            host_name = th.RC.HostName;
+            rem_file = self.YamlObj['hosts'][host_name]['file'];
+            loc_file = "%s/%s_%s" % (out_folder, host_name, rem_file);
+            print("  Retrieving %s from %s" % (rem_file, host_name));
+            th.RC.get_file(rem_file, loc_file)
+            # close the remote connection, no more commands allowed
+            th.disconnect();
+        print("File retrieval complete.");
 
-   def Go(self, out_folder='.', in_folder='.'):
-      self.Start();
-      self.Wait();
-      self.GetFiles(out_folder);
+    def Go(self, out_folder='.', in_folder='.'):
+        self.Start();
+        self.Wait();
+        self.GetFiles(out_folder);
+
 
 # SvrMultiHostCustom - Base clase for providing callback based factory to extend for your
 #                    own purposes.
 #
 class SvrMultiHostCustom:
-   def __init__(self):
-      self.ThreadList  = list();
+    def __init__(self):
+        self.ThreadList = list();
 
-   def AddThread(self, host_thread):
-      self.ThreadList.append(host_thread);
+    def AddThread(self, host_thread):
+        self.ThreadList.append(host_thread);
 
-   def Start(self):
-      print "Starting multi-host threads...";
-      for th in self.ThreadList:
-         th.start();
+    def Start(self):
+        print("Starting multi-host threads...");
+        for th in self.ThreadList:
+            th.start();
 
-   def Wait(self):
-      for th in self.ThreadList:
-         th.join();
-      print "Threads exited, disconnecting..."
-      for th in self.ThreadList:
-         th.disconnect();
-      print "Thread execution complete.";
+    def Wait(self):
+        for th in self.ThreadList:
+            th.join();
+        print("Threads exited, disconnecting...")
+        for th in self.ThreadList:
+            th.disconnect();
+        print("Thread execution complete.");
 
-   def Go(self):
-      self.Start();
-      self.Wait();
+    def Go(self):
+        self.Start();
+        self.Wait();
+
 
 #############################################
 
 # Determine how we were instantiated (command line, or included)
 CFG_FROM_CMD_LINE = False;
 if (sys.argv[0] == __file__):
-   CFG_FROM_CMD_LINE = True;
+    CFG_FROM_CMD_LINE = True;
 
 if (CFG_FROM_CMD_LINE):
-   # We were launched from the command line so execute a test workload, only on the first
-   # host in the list; this could easily be adapted to work on each host in the list but is
-   # not necessary for the "unit test" purpose of this basic functionality.
-   args = GetArgs();
+    # We were launched from the command line so execute a test workload, only on the first
+    # host in the list; this could easily be adapted to work on each host in the list but is
+    # not necessary for the "unit test" purpose of this basic functionality.
+    args = GetArgs();
 
-   yaml_obj = None;
-   try:
-      yaml_obj = yaml.load(args.CfgYamlIn);
-   except yaml.YAMLError, exc:
-      print "Error in configuration file: %s" % (exc);
+    yaml_obj = None;
+    try:
+        yaml_obj = yaml.load(args.CfgYamlIn);
+    except yaml.YAMLError as exc:
+        print("Error in configuration file: %s" % (exc));
 
-   if (yaml_obj is None):
-      print "ERR: failed to load YAML config file from %s" % (args.CfgYamlIn.name);
-      raise SystemExit(1);
+    if (yaml_obj is None):
+        print("ERR: failed to load YAML config file from %s" % (args.CfgYamlIn.name));
+        raise SystemExit(1);
 
-   rem_exec = SvrMultiHost(yaml_obj, user_name=args.CfgUserName, user_pass=args.CfgUserPwd);
-   rem_exec.Go(args.CfgOut);
-   raise SystemExit(0);
+    rem_exec = SvrMultiHost(yaml_obj, user_name=args.CfgUserName, user_pass=args.CfgUserPwd);
+    rem_exec.Go(args.CfgOut);
+    raise SystemExit(0);

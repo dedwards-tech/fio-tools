@@ -43,6 +43,7 @@ class SCPClient(object):
     Since scp doesn't support symlinks, we send file symlinks as the file
     (matching scp behaviour), but we make no attempt at symlinked directories.
     """
+
     def __init__(self, transport, buff_size=16384, socket_timeout=5.0,
                  progress=None, sanitize=_sh_quote):
         """
@@ -346,7 +347,7 @@ class SCPClient(object):
             # should we notify the other end?
         finally:
             file_hdl.close()
-        # '\x00' confirmation sent in _recv_all
+            # '\x00' confirmation sent in _recv_all
 
     def _recv_pushd(self, cmd):
         parts = cmd.split()

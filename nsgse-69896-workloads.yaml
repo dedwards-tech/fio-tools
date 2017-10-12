@@ -1,0 +1,144 @@
+fio-gen:
+   sequence:
+      port0_short_a: "loop01_12hr_rw_seq_xfer_128k_p1,loop02_12hr_write_rand_xfer_512_128k_p1,loop03_port0_read_seq_xfer_128k_60s_p1"
+      port1_short_a: "loop01_12hr_rw_seq_xfer_128k_p2,loop02_12hr_write_rand_xfer_512_128k_p2,loop03_port0_read_seq_xfer_128k_60s_p2"
+      port0_short_b: "loop04_12hr_read_rand_xfer_512_128k_p1,loop05a_24hr_write_ver_rand_xfer_512_128k_60s_p1,loop06_read_seq_xfer_128k_60s_p1"
+      port1_short_b: "loop04_12hr_read_rand_xfer_512_128k_p2,loop05a_24hr_write_ver_rand_xfer_512_128k_60s_p2,loop06_read_seq_xfer_128k_60s_p2"
+   target_groups:
+      port0: "/dev/nvme0n1,/dev/nvme1n1,/dev/nvme2n1,/dev/nvme3n1,/dev/nvme4n1,/dev/nvme5n1,/dev/nvme6n1,/dev/nvme7n1,/dev/nvme8n1,/dev/nvme9n1,/dev/nvme10n1,/dev/nvme11n1,/dev/nvme12n1,/dev/nvme13n1,/dev/nvme14n1,/dev/nvme15n1,/dev/nvme16n1,/dev/nvme17n1,/dev/nvme18n1,/dev/nvme19n1,/dev/nvme20n1,/dev/nvme21n1,/dev/nvme22n1,/dev/nvme23n1"
+      port1: "/dev/nvme24n1,/dev/nvme25n1,/dev/nvme26n1,/dev/nvme27n1,/dev/nvme28n1,/dev/nvme29n1,/dev/nvme30n1,/dev/nvme31n1,/dev/nvme32n1,/dev/nvme33n1,/dev/nvme34n1,/dev/nvme35n1,/dev/nvme36n1,/dev/nvme37n1,/dev/nvme38n1,/dev/nvme39n1,/dev/nvme40n1,/dev/nvme41n1,/dev/nvme42n1,/dev/nvme43n1,/dev/nvme44n1,/dev/nvme45n1,/dev/nvme46n1,/dev/nvme47n1"
+   global_default:
+      group_reporting: "true"
+      gtod_reduce:     "false"
+      direct:          "true"
+      ioengine:        "libaio"
+      percentile_list: "99:99.9:99.99:99.999:99.9999:99.99999:99.999999:99.9999999"
+      randrepeat:      "false"
+      numjobs:         "1"
+      iodepth:         "64"
+   workloads_port0:
+      section_targets: "port0"
+      section_default:
+         # Only defaults used for this "sections" declaration, there can be multiple sections declarations!
+         offset:      "0"
+         size:        "\"50%\""
+      loop01_12hr_rw_seq_xfer_128k_p1:
+         norandommap: "true"
+         blocksize:  "128k"
+         read_pct:    "50"
+         io_type:     "Sequential"
+         run_time:    "30"
+      loop02_12hr_write_rand_xfer_512_128k_p1:
+         norandommap: "false"
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "30"
+      loop03_port0_read_seq_xfer_128k_60s_p1:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "60"
+      loop03_port0_read_seq_xfer_128k_1pass_p1:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "-1"
+      loop04_12hr_read_rand_xfer_512_128k_p1:
+         norandommap: "true"
+         bs_range:    "512-128k"
+         read_pct:    "100"
+         io_type:     "Random"
+         run_time:    "30"
+      loop05a_24hr_write_ver_rand_xfer_512_128k_60s_p1:
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "60"
+         verify:     "sha1"
+      loop05a_24hr_write_ver_rand_xfer_512_128k_1pass_p1:
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "-1"
+         verify:     "sha1"
+      loop05b_24hr_rd_ver_rand_xfer_512_128k_1pass_p1:
+         bs_range:   "512-128k"
+         read_pct:   "100"
+         io_type:    "Random"
+         run_time:   "-1"
+         verify:     "sha1"
+      loop06_read_seq_xfer_128k_60s_p1:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "60"
+      loop06_read_seq_xfer_128k_1pass_p1:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "-1"
+   # same exact thing as port 0 but with LBA offset at 50%
+   workloads_port1:
+      section_targets: "port1"
+      section_default:
+         # Only defaults used for this "sections" declaration, there can be multiple sections declarations!
+         offset:      "\"50%\""
+         size:        "\"50%\""
+      loop01_12hr_rw_seq_xfer_128k_p2:
+         norandommap: "true"
+         blocksize:  "128k"
+         read_pct:    "50"
+         io_type:     "Sequential"
+         run_time:    "30"
+      loop02_12hr_write_rand_xfer_512_128k_p2:
+         norandommap: "false"
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "30"
+      loop03_port0_read_seq_xfer_128k_60s_p2:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "60"
+      loop03_port0_read_seq_xfer_128k_1pass_p2:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "-1"
+      loop04_12hr_read_rand_xfer_512_128k_p2:
+         norandommap: "true"
+         bs_range:    "512-128k"
+         read_pct:    "100"
+         io_type:     "Random"
+         run_time:    "30"
+      loop05a_24hr_write_ver_rand_xfer_512_128k_60s_p2:
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "60"
+         verify:     "sha1"
+      loop05a_24hr_write_ver_rand_xfer_512_128k_1pass_p2:
+         bs_range:   "512-128k"
+         read_pct:   "0"
+         io_type:    "Random"
+         run_time:   "-1"
+         verify:     "sha1"
+      loop05b_24hr_rd_ver_rand_xfer_512_128k_1pass_p2:
+         bs_range:   "512-128k"
+         read_pct:   "100"
+         io_type:    "Random"
+         run_time:   "-1"
+         verify:     "sha1"
+      loop06_read_seq_xfer_128k_60s_p2:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "60"
+      loop06_read_seq_xfer_128k_1pass_p2:
+         blocksize: "128k"
+         read_pct:   "100"
+         io_type:    "Sequential"
+         run_time:   "-1"
+...
