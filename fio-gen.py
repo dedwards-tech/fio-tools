@@ -29,72 +29,72 @@ CFG_DEFAULT_WORKLOAD_YAML = """fio-gen:
       d4_b2e:   "/dev/sdb,/dev/sdc,/dev/sdd,/dev/sde"
       d4_f2i:   "/dev/sdf,/dev/sdg,/dev/sdh,/dev/sdi"
       d8_b2i:   "/dev/sdb,/dev/sdc,/dev/sdd,/dev/sde,/dev/sdf,/dev/sdg,/dev/sdh,/dev/sdi"
-   global:
+   global_default:
       group_reporting: "true"
       reduce_tod:      "false"
    workloads:
       precondition:
-         block_size: "256k"
-         io_depth: "1"
-         io_type: "Sequential"
-         num_jobs: "1"
-         read_pct: "0"
-         run_time: "-1"
+         blocksize: "256k"
+         iodepth:   "1"
+         io_type:   "Sequential"
+         numjobs:   "1"
+         read_pct:  "0"
+         run_time:  "-1"
       max-rrd-iops:
-         block_size: "4k"
-         io_depth:   "32"
-         num_jobs:   "8"
-         read_pct:   "100"
-         io_type:    "Random"
-         run_time: "60"
+         blocksize: "4k"
+         iodepth:   "32"
+         numjobs:   "8"
+         read_pct:  "100"
+         io_type:   "Random"
+         run_time:  "60"
       max-rwr-iops:
-         block_size: "4k"
-         io_depth:   "32"
-         num_jobs:   "8"
-         read_pct:   "0"
-         io_type:    "Random"
-         run_time: "60"
+         blocksize: "4k"
+         iodepth:   "32"
+         numjobs:   "8"
+         read_pct:  "0"
+         io_type:   "Random"
+         run_time:  "60"
       max-rrd-bw:
-         block_size: "256k"
-         io_depth:   "32"
-         num_jobs:   "4"
-         read_pct:   "100"
-         io_type:    "Random"
-         run_time: "60"
+         blocksize: "256k"
+         iodepth:   "32"
+         numjobs:   "4"
+         read_pct:  "100"
+         io_type:   "Random"
+         run_time:  "60"
       max-rwr-bw:
-         block_size: "256k"
-         io_depth:   "32"
-         num_jobs:   "4"
-         read_pct:   "0"
-         io_type:    "Random"
-         run_time: "60"
+         blocksize: "256k"
+         iodepth:   "32"
+         numjobs:   "4"
+         read_pct:  "0"
+         io_type:   "Random"
+         run_time:  "60"
    block_sweep:
       blkswp-rrd:
-         block_size: "512,1k,2k,4k,8k,16k,32k,64k,128k,256k,512k"
-         io_depth: "32"
-         num_jobs: "1,8"
-         io_type:  "Random"
-         read_pct: "100"
-         run_time: "60"
+         blocksize: "512,1k,2k,4k,8k,16k,32k,64k,128k,256k,512k"
+         iodepth:   "32"
+         numjobs:   "1,8"
+         io_type:   "Random"
+         read_pct:  "100"
+         run_time:  "60"
       blkswp-rwr:
-         block_size: "512,1k,2k,4k,8k,16k,32k,64k,128k,256k,512k"
-         io_depth: "32"
-         num_jobs: "1,8"
-         io_type:  "Random"
-         read_pct: "0"
-         run_time: "60"
+         blocksize: "512,1k,2k,4k,8k,16k,32k,64k,128k,256k,512k"
+         iodepth:   "32"
+         numjobs:   "1,8"
+         io_type:   "Random"
+         read_pct:  "0"
+         run_time:  "60"
    qd_sweep:
       qdswp-rrd:
-         block_size: "4k,32k,64k"
-         io_depth:   "1,2,4,8,16,32"
-         num_jobs: "1,8"
+         blocksize: "4k,32k,64k"
+         iodepth:   "1,2,4,8,16,32"
+         numjobs:   "1,8"
          io_type:  "Random"
          read_pct: "100"
          run_time: "60"
       qdswp-rwr:
-         block_size: "4k,32k,64k"
-         io_depth:   "1,2,4,8,16,32"
-         num_jobs: "1,8"
+         blocksize: "4k,32k,64k"
+         iodepth:   "1,2,4,8,16,32"
+         numjobs:   "1,8"
          io_type:  "Random"
          read_pct: "0"
          run_time: "60"
@@ -301,7 +301,13 @@ def AddArgs(parser_obj):
     parser_obj.add_argument('-o', dest='CfgOutFolder', action='store', required=False, default="./out",
                             help='Specify a folder to place output files into.');
     parser_obj.add_argument('-w', dest='CfgWorkloads', action='store', required=False, type=argparse.FileType('r'),
-                            default=None, help='Override the default workload YAML based config file.');
+                            default=None, help='Provide a workload specification in YAML config file.');
+    parser_obj.add_argument('-t', dest='CfgTargetSpec', action='store', required=False, default=None,
+                            help='Override the section_targets parameter (in config file) to execute workloads against.');
+    parser_obj.add_argument('-s', dest='CfgShowInfo', action='store_true', required=False, default=False,
+                            help='Show useful information about a workload specification provided with -w option.');
+    parser_obj.add_argument('-v', dest='CfgVerbose', action='store_true', required=False, default=False,
+                            help='Enable verbose output during execution.');
 
 
 def GetArgs():
@@ -320,6 +326,10 @@ def GetArgs():
 
 #############################################
 
+# This was necessary for porting between python 2 and 3 since they literally removed
+# iter_items() in python 3.  Its not fool proof for really old versions, and no, it
+# hasn't been unit tested between both environments yet.
+#
 def GetIterItemsFromKVP(dict_obj, default={}):
     kvp_list = default;
     try:
@@ -331,6 +341,9 @@ def GetIterItemsFromKVP(dict_obj, default={}):
     return kvp_list;
 
 
+# Grab an array of strings from a comma separated string of values, and do
+# proper error chacking on results.  No blank entries such as "item, " allowed!
+#
 def GetListFromCommaSepString(item_string):
     if (item_string is not None):
         items = item_string.split(',');
@@ -345,7 +358,8 @@ def GetListFromCommaSepString(item_string):
     return items;
 
 
-# Get Dict object from key / comma separated string value, with CSS as list (array)
+# Get Dict object from key / comma separated string value, with CSS as list (array).
+#
 def GetDictFromK_Vcss(kvp):
     new_dict = {}
     for k, v in GetIterItemsFromKVP(kvp):
@@ -353,7 +367,10 @@ def GetDictFromK_Vcss(kvp):
     return new_dict;
 
 
-def GetValueFromKey_safe(key, kvp, default):
+# Helper function to grab a dictionary value from a key/value pair with default
+# if the key is not present in the dictionary.
+#
+def GetValueFromKeyWDefault(key, kvp, default):
     if key in kvp:
         if kvp[key] is not None:
             return kvp[key];
@@ -399,6 +416,30 @@ def ProcessQdSweepObj(qdsweep_obj, item_name, workload_list, target_list):
                 workload = FioWorkloadSpec(False, wkload_name, bs_obj, run_time, read_pct, io_type, io_depth, num_jobs, target_list);
                 workload_list.append(workload);
                 sequence_id += 1;
+
+def ShowSequenceInfo(sequence_dict, verbose=False):
+    short_txt   = "Sequences Specified: ";
+    verbose_txt = short_txt + "\n---------------------------------------------\n";
+    for seq_key, seq_values in GetIterItemsFromKVP(sequence_dict):
+        short_txt += "%s, " % (seq_key);
+        if verbose:
+            verbose_txt += "%s: workloads=" % (seq_key) + pp.pformat(seq_values) + "\n";
+    if verbose:
+        print(verbose_txt);
+    else:
+        print(short_txt);
+
+def ShowTargetGroupInfo(targets_dict, verbose=False):
+    short_txt = "Target Groups Specified: ";
+    verbose_txt = short_txt + "\n---------------------------------------------\n";
+    for tgt_key, tgt_values in GetIterItemsFromKVP(targets_dict):
+        short_txt += "%s, " % (tgt_key);
+        if verbose:
+            verbose_txt += "%s: targets=" % (tgt_key) + pp.pformat(tgt_values) + "\n";
+    if verbose:
+        print(verbose_txt);
+    else:
+        print(short_txt);
 
 
 # Determine how we were instantiated (command line, or included)
@@ -475,55 +516,68 @@ if (CFG_FROM_CMD_LINE):
         num_sequences      = len(sequence_dict.keys());
         num_targets        = len(target_dict.keys());
         num_workload_specs = len(workload_spec_list);
-        print("There are %s \"sequence\" declarations to process." % (num_sequences))
-        print("There are %s \"target_group\" declarations to process." % (num_targets))
-        print("There are %d \"workloads\" sections to process." % (num_workload_specs));
+        print("\nThere are %s \"sequence\" declarations to process." % (num_sequences))
+        if args.CfgShowInfo:
+            ShowSequenceInfo(sequence_dict, args.CfgVerbose);
+
+        print("\nThere are %s \"target_group\" declarations to process." % (num_targets))
+        if args.CfgShowInfo:
+            ShowTargetGroupInfo(target_dict, args.CfgVerbose);
 
         # Validate inputs, and fail out if warranted...
         if num_targets == 0:
             print("ERR: missing \"target_groups\" declaration in workload specification!")
             raise SystemExit(1);
 
-        for workload_spec in workload_spec_list:
-            print("Generating workload configurations...")
-            # merge global defaults and section specific defaults.
-            section_default = global_default.copy();
-            section_default.update(workload_spec['section_default']);
+        if args.CfgShowInfo is None:
+            print("\nThere are %d \"workloads\" sections to process." % (num_workload_specs));
 
-            section_targets = GetValueFromKey_safe('section_targets', workload_spec, None);
-            target_list     = GetValueFromKey_safe(section_targets, target_dict, None);
-            if target_list is None:
-                print("ERR: unknown target group (-t %s) option specified" % (section_targets));
-                raise SystemExit(1);
+            for workload_spec in workload_spec_list:
+                print("Generating workload configurations...")
+                # merge global defaults and section specific defaults.
+                section_default = global_default.copy();
+                section_default.update(workload_spec['section_default']);
 
-            # process workload spec; but skip the 'section_default' declaration.
-            for section_key, section_values in GetIterItemsFromKVP(workload_spec):
-                if (section_key != 'section_default') and (section_key != 'section_targets'):
-                    # we had to pre-process the defaults because we can't rely on ordering of iteration.
-                    print(" * generating workload spec for: %s" % (section_key))
-                    workload = FioSpecAllTargetsSameWorkload(section_key, section_values, target_list, section_default)
-                    workload_list.append(workload);
+                if args.CfgCfgTargetSpec is not None:
+                    # allow command line -t option to override the workload spec
+                    section_targets = args.CfgCfgTargetSpec;
+                else:
+                    section_targets = GetValueFromKeyWDefault('section_targets', workload_spec, None);
+                    if section_targets is None:
+                        print("ERR: no \"target_groups\" section was specified in workload spec nor command line with -t option.");
+                        raise SystemExit(1);
+
+                # use the target specified in the workload spec.
+                target_list = GetValueFromKeyWDefault(section_targets, target_dict, None);
+                if target_list is None:
+                    print("ERR: unknown target group (-t %s) option specified." % (section_targets));
+                    raise SystemExit(1);
+
+                # process workload spec; but skip the 'section_default' declaration.
+                for section_key, section_values in GetIterItemsFromKVP(workload_spec):
+                    if (section_key != 'section_default') and (section_key != 'section_targets'):
+                        # we had to pre-process the defaults because we can't rely on ordering of iteration.
+                        print(" * generating workload spec for: %s" % (section_key))
+                        workload = FioSpecAllTargetsSameWorkload(section_key, section_values, target_list, section_default)
+                        workload_list.append(workload);
 
     except yaml.YAMLError as exc:
         print("Error in workload definition file: %s" % (exc));
 
-    if (len(workload_list) == 0):
-        print("ERR: invalid workload config file format in %s" % (args.CfgWorkloads.name));
-        raise SystemExit(1);
+    if args.CfgShowInfo is None:
+        # execute for real when we are NOT showing info for the user.
+        if (len(workload_list) == 0):
+            print("ERR: invalid workload config file format in %s" % (args.CfgWorkloads.name));
+            raise SystemExit(1);
 
-    # Validate sequences against workload definitions; make sure they all exist.
-    # Warn if they don't exist but are NOT selected as target sequence.
-    # Fail if they don't exist AND ARE selected as target sequence.
-    # TODO: implement
+        # Generate script output
+        print("Clearing previous scripts from: %s" % (args.CfgOutFolder));
+        subprocess.call(["rm -rf %s/*.fio" % (args.CfgOutFolder)], shell=True);
+        GenerateFioScripts(workload_list, args.CfgOutFolder);
 
-    # Generate script output
-    print("Clearing previous scripts from: %s" % (args.CfgOutFolder));
-    subprocess.call(["rm -rf %s/*.fio" % (args.CfgOutFolder)], shell=True);
-    GenerateFioScripts(workload_list, args.CfgOutFolder);
-
-    # Generate fio-exec.py script
-    print("Clearing previous fio-exec.py from: %s" % (args.CfgOutFolder));
-    subprocess.call(["rm -rf %s/fio-exec.py" % (args.CfgOutFolder)], shell=True);
-    GenerateFioExecScript(sequence_dict, args.CfgOutFolder);
+        # Generate fio-exec.py script
+        print("Clearing previous fio-exec.py from: %s" % (args.CfgOutFolder));
+        subprocess.call(["rm -rf %s/fio-exec.py" % (args.CfgOutFolder)], shell=True);
+        GenerateFioExecScript(sequence_dict, args.CfgOutFolder);
 
     raise SystemExit(0);
